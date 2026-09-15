@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f7">
+<meta name="description" content="根据性别、腰围和体重快速估算体脂率">
+<title>体脂率计算器</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-soft: #eff6ff;
+    --good: #16a34a;
+    --good-soft: #f0fdf4;
+    --warn: #d97706;
+    --warn-soft: #fffbeb;
+    --danger: #dc2626;
+    --danger-soft: #fef2f2;
+    --ring: rgba(37, 99, 235, 0.35);
+    --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.06);
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b1220;
+      --card: #111a2c;
+      --text: #e6edf7;
+      --muted: #94a3b8;
+      --border: #24314a;
+      --accent: #3b82f6;
+      --accent-hover: #60a5fa;
+      --accent-soft: #13233f;
+      --good: #22c55e;
+      --good-soft: #0f2a1a;
+      --warn: #f59e0b;
+      --warn-soft: #2a2110;
+      --danger: #f87171;
+      --danger-soft: #2a1212;
+      --ring: rgba(59, 130, 246, 0.45);
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+      color-scheme: dark;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    padding: 32px 28px;
+  }
+
+  h1 {
+    margin: 0 0 6px;
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .subtitle {
+    margin: 0 0 28px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .field {
+    margin-bottom: 20px;
+  }
+
+  .field-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  /* Segmented gender control */
+  .segmented {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .segmented input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+  }
+
+  .segmented label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 11px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .segmented label:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .segmented input:focus-visible + label {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .segmented input:checked + label {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .input-wrap {
+    position: relative;
+  }
+
+  input[type="number"] {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    appearance: textfield;
+    -moz-appearance: textfield;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type="number"]:hover { border-color: var(--muted); }
+
+  input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--ring);
+  }
+
+  input[type="number"][aria-invalid="true"] {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+  }
+
+  .unit {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 0.875rem;
+    pointer-events: none;
+  }
+
+  .error {
+    display: none;
+    margin-top: 6px;
+    font-size: 0.8rem;
+    color: var(--danger);
+  }
+
+  .error.visible { display: block; }
+
+  .btn {
+    width: 100%;
+    padding: 13px 16px;
+    margin-top: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    color: #ffffff;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+  }
+
+  .btn:hover { background: var(--accent-hover); }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .result {
+    margin-top: 24px;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    background: var(--accent-soft);
+    display: none;
+  }
+
+  .result.visible { display: block; }
+
+  .result.tone-good { background: var(--good-soft); }
+  .result.tone-warn { background: var(--warn-soft); }
+  .result.tone-low { background: var(--warn-soft); }
+  .result.tone-high { background: var(--danger-soft); }
+
+  .result-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .result-value {
+    font-size: 2.6rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  .result-unit { font-size: 1.2rem; font-weight: 600; color: var(--muted); }
+
+  .result-badge {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 4px 14px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+
+  .tone-good .result-badge { background: var(--good); color: #ffffff; }
+  .tone-warn .result-badge, .tone-low .result-badge { background: var(--warn); color: #ffffff; }
+  .tone-high .result-badge { background: var(--danger); color: #ffffff; }
+
+  .formula-note {
+    margin-top: 20px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .formula-note strong { color: var(--text); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+  <main class="app">
+    <div class="card">
+      <h1>体脂率计算器</h1>
+      <p class="subtitle">输入性别、腰围和体重，即可快速估算体脂率</p>
+
+      <form id="calc-form" novalidate>
+        <div class="field" role="radiogroup" aria-labelledby="gender-label">
+          <span class="field-label" id="gender-label">性别</span>
+          <div class="segmented">
+            <input type="radio" id="gender-male" name="gender" value="male" checked>
+            <label for="gender-male">男性</label>
+            <input type="radio" id="gender-female" name="gender" value="female">
+            <label for="gender-female">女性</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="waist">腰围</label>
+          <div class="input-wrap">
+            <input type="number" id="waist" name="waist" inputmode="decimal"
+                   step="0.1" min="30" max="300" placeholder="例如 80…" autocomplete="off">
+            <span class="unit">厘米</span>
+          </div>
+          <p class="error" id="waist-error" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="weight">体重</label>
+          <div class="input-wrap">
+            <input type="number" id="weight" name="weight" inputmode="decimal"
+                   step="0.1" min="20" max="300" placeholder="例如 65…" autocomplete="off">
+            <span class="unit">千克</span>
+          </div>
+          <p class="error" id="weight-error" role="alert"></p>
+        </div>
+
+        <button type="submit" class="btn" id="calc-btn">开始计算</button>
+      </form>
+
+      <section class="result" id="result" aria-live="polite" role="status">
+        <div class="result-label">你的体脂率</div>
+        <div class="result-value"><span id="rate-value">0</span><span class="result-unit">%</span></div>
+        <div class="result-badge" id="rate-badge"></div>
+      </section>
+
+      <p class="formula-note">
+        计算公式：脂肪重量 = 腰围 × 0.74 −（体重 × 0.082 + 系数），体脂率 = 脂肪重量 ÷ 体重 × 100%。
+        其中系数为 <strong>34.89</strong>（女性）/ <strong>44.74</strong>（男性）。结果仅供参考。
+      </p>
+    </div>
+  </main>
+
+<script>
+(function () {
+  var form = document.getElementById('calc-form');
+  var waist = document.getElementById('waist');
+  var weight = document.getElementById('weight');
+  var waistError = document.getElementById('waist-error');
+  var weightError = document.getElementById('weight-error');
+  var resultPanel = document.getElementById('result');
+  var rateValue = document.getElementById('rate-value');
+  var rateBadge = document.getElementById('rate-badge');
+
+  function setError(input, errorEl, message) {
+    if (message) {
+      input.setAttribute('aria-invalid', 'true');
+      errorEl.textContent = message;
+      errorEl.classList.add('visible');
+    } else {
+      input.removeAttribute('aria-invalid');
+      errorEl.textContent = '';
+      errorEl.classList.remove('visible');
+    }
+  }
+
+  function validate() {
+    var wRaw = waist.value.trim();
+    var kgRaw = weight.value.trim();
+    var firstInvalid = null;
+
+    if (wRaw === '') {
+      setError(waist, waistError, '请输入腰围');
+      if (!firstInvalid) firstInvalid = waist;
+    } else if (isNaN(Number(wRaw)) || Number(wRaw) < 30 || Number(wRaw) > 300) {
+      setError(waist, waistError, '请输入 30–300 之间的数值');
+      if (!firstInvalid) firstInvalid = waist;
+    } else {
+      setError(waist, waistError, null);
+    }
+
+    if (kgRaw === '') {
+      setError(weight, weightError, '请输入体重');
+      if (!firstInvalid) firstInvalid = weight;
+    } else if (isNaN(Number(kgRaw)) || Number(kgRaw) < 20 || Number(kgRaw) > 300) {
+      setError(weight, weightError, '请输入 20–300 之间的数值');
+      if (!firstInvalid) firstInvalid = weight;
+    } else {
+      setError(weight, weightError, null);
+    }
+
+    return firstInvalid;
+  }
+
+  function classify(gender, rate) {
+    if (gender === 'female') {
+      if (rate < 18) return { label: '偏低', tone: 'low' };
+      if (rate <= 28) return { label: '正常', tone: 'good' };
+      return { label: '偏高', tone: 'high' };
+    }
+    if (rate < 10) return { label: '偏低', tone: 'low' };
+    if (rate <= 20) return { label: '正常', tone: 'good' };
+    return { label: '偏高', tone: 'high' };
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var firstInvalid = validate();
+    if (firstInvalid) {
+      firstInvalid.focus();
+      return;
+    }
+
+    var gender = form.querySelector('input[name="gender"]:checked').value;
+    var w = Number(waist.value);
+    var kg = Number(weight.value);
+
+    var a = w * 0.74;
+    var constant = gender === 'female' ? 34.89 : 44.74;
+    var b = kg * 0.082 + constant;
+    var fatWeight = a - b;
+    var rate = Math.max(0, (fatWeight / kg) * 100);
+
+    var r = classify(gender, rate);
+
+    rateValue.textContent = rate.toFixed(1);
+    rateBadge.textContent = r.label;
+    resultPanel.className = 'result visible tone-' + r.tone;
+  });
+
+  // Clear the corresponding error as the user types
+  waist.addEventListener('input', function () {
+    if (waist.getAttribute('aria-invalid')) setError(waist, waistError, null);
+  });
+  weight.addEventListener('input', function () {
+    if (weight.getAttribute('aria-invalid')) setError(weight, weightError, null);
+  });
+})();
+</script>
+</body>
+</html>
