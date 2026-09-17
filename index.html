@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f4f5f7">
-<meta name="description" content="根据性别、腰围和体重快速估算体脂率">
+<meta name="description" content="根据性别、身高、体重、腰围和年龄，综合两种公式快速估算体脂率">
 <title>体脂率计算器</title>
 <style>
   :root {
@@ -281,6 +281,47 @@
   .tone-warn .result-badge, .tone-low .result-badge { background: var(--warn); color: #ffffff; }
   .tone-high .result-badge { background: var(--danger); color: #ffffff; }
 
+  .result-subs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .result-sub {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 10px;
+  }
+
+  .result-sub-name {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .result-sub-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .result-avg {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .result-avg-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
   .formula-note {
     margin-top: 20px;
     font-size: 0.75rem;
@@ -299,7 +340,7 @@
   <main class="app">
     <div class="card">
       <h1>体脂率计算器</h1>
-      <p class="subtitle">输入性别、腰围和体重，即可快速估算体脂率</p>
+      <p class="subtitle">输入性别、身高、体重、腰围和年龄，即可快速估算体脂率</p>
 
       <form id="calc-form" novalidate>
         <div class="field" role="radiogroup" aria-labelledby="gender-label">
@@ -313,13 +354,13 @@
         </div>
 
         <div class="field">
-          <label class="field-label" for="waist">腰围</label>
+          <label class="field-label" for="height">身高</label>
           <div class="input-wrap">
-            <input type="number" id="waist" name="waist" inputmode="decimal"
-                   step="0.1" min="30" max="300" placeholder="例如 80…" autocomplete="off">
+            <input type="number" id="height" name="height" inputmode="decimal"
+                   step="0.1" min="100" max="250" placeholder="例如 170…" autocomplete="off">
             <span class="unit">厘米</span>
           </div>
-          <p class="error" id="waist-error" role="alert"></p>
+          <p class="error" id="height-error" role="alert"></p>
         </div>
 
         <div class="field">
@@ -332,18 +373,55 @@
           <p class="error" id="weight-error" role="alert"></p>
         </div>
 
+        <div class="field">
+          <label class="field-label" for="waist">腰围</label>
+          <div class="input-wrap">
+            <input type="number" id="waist" name="waist" inputmode="decimal"
+                   step="0.1" min="30" max="300" placeholder="例如 80…" autocomplete="off">
+            <span class="unit">厘米</span>
+          </div>
+          <p class="error" id="waist-error" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="age">年龄</label>
+          <div class="input-wrap">
+            <input type="number" id="age" name="age" inputmode="numeric"
+                   step="1" min="1" max="120" placeholder="例如 30…" autocomplete="off">
+            <span class="unit">岁</span>
+          </div>
+          <p class="error" id="age-error" role="alert"></p>
+        </div>
+
         <button type="submit" class="btn" id="calc-btn">开始计算</button>
       </form>
 
       <section class="result" id="result" aria-live="polite" role="status">
         <div class="result-label">你的体脂率</div>
-        <div class="result-value"><span id="rate-value">0</span><span class="result-unit">%</span></div>
-        <div class="result-badge" id="rate-badge"></div>
+
+        <div class="result-subs">
+          <div class="result-sub">
+            <span class="result-sub-name">腰围估计法</span>
+            <span class="result-sub-value"><span id="rate1-value">0</span>%</span>
+          </div>
+          <div class="result-sub">
+            <span class="result-sub-name">BMI估计法</span>
+            <span class="result-sub-value"><span id="rate2-value">0</span>%</span>
+          </div>
+        </div>
+
+        <div class="result-avg">
+          <div class="result-avg-label">平均值</div>
+          <div class="result-value"><span id="rate-value">0</span><span class="result-unit">%</span></div>
+          <div class="result-badge" id="rate-badge"></div>
+        </div>
       </section>
 
       <p class="formula-note">
-        计算公式：脂肪重量 = 腰围 × 0.74 −（体重 × 0.082 + 系数），体脂率 = 脂肪重量 ÷ 体重 × 100%。
-        其中系数为 <strong>34.89</strong>（女性）/ <strong>44.74</strong>（男性）。结果仅供参考。
+        本工具综合两种公式取平均值：<strong>腰围估计法</strong> 脂肪重量 = 腰围 × 0.74 −（体重 × 0.082 + 系数），
+        体脂率 = 脂肪重量 ÷ 体重 × 100%，系数为 <strong>34.89</strong>（女性）/ <strong>44.74</strong>（男性）；
+        <strong>BMI估计法</strong> 体脂率 = 1.2 × BMI + 0.23 × 年龄 − 5.4 − 10.8 × 性别，
+        其中 BMI = 体重（千克）÷ 身高（米）²，性别男为 1、女为 0。结果仅供参考。
       </p>
     </div>
   </main>
@@ -351,13 +429,19 @@
 <script>
 (function () {
   var form = document.getElementById('calc-form');
-  var waist = document.getElementById('waist');
+  var height = document.getElementById('height');
   var weight = document.getElementById('weight');
-  var waistError = document.getElementById('waist-error');
+  var waist = document.getElementById('waist');
+  var age = document.getElementById('age');
+  var heightError = document.getElementById('height-error');
   var weightError = document.getElementById('weight-error');
+  var waistError = document.getElementById('waist-error');
+  var ageError = document.getElementById('age-error');
   var resultPanel = document.getElementById('result');
   var rateValue = document.getElementById('rate-value');
   var rateBadge = document.getElementById('rate-badge');
+  var rate1Value = document.getElementById('rate1-value');
+  var rate2Value = document.getElementById('rate2-value');
 
   function setError(input, errorEl, message) {
     if (message) {
@@ -372,9 +456,31 @@
   }
 
   function validate() {
-    var wRaw = waist.value.trim();
+    var hRaw = height.value.trim();
     var kgRaw = weight.value.trim();
+    var wRaw = waist.value.trim();
+    var ageRaw = age.value.trim();
     var firstInvalid = null;
+
+    if (hRaw === '') {
+      setError(height, heightError, '请输入身高');
+      if (!firstInvalid) firstInvalid = height;
+    } else if (isNaN(Number(hRaw)) || Number(hRaw) < 100 || Number(hRaw) > 250) {
+      setError(height, heightError, '请输入 100–250 之间的数值');
+      if (!firstInvalid) firstInvalid = height;
+    } else {
+      setError(height, heightError, null);
+    }
+
+    if (kgRaw === '') {
+      setError(weight, weightError, '请输入体重');
+      if (!firstInvalid) firstInvalid = weight;
+    } else if (isNaN(Number(kgRaw)) || Number(kgRaw) < 20 || Number(kgRaw) > 300) {
+      setError(weight, weightError, '请输入 20–300 之间的数值');
+      if (!firstInvalid) firstInvalid = weight;
+    } else {
+      setError(weight, weightError, null);
+    }
 
     if (wRaw === '') {
       setError(waist, waistError, '请输入腰围');
@@ -386,14 +492,14 @@
       setError(waist, waistError, null);
     }
 
-    if (kgRaw === '') {
-      setError(weight, weightError, '请输入体重');
-      if (!firstInvalid) firstInvalid = weight;
-    } else if (isNaN(Number(kgRaw)) || Number(kgRaw) < 20 || Number(kgRaw) > 300) {
-      setError(weight, weightError, '请输入 20–300 之间的数值');
-      if (!firstInvalid) firstInvalid = weight;
+    if (ageRaw === '') {
+      setError(age, ageError, '请输入年龄');
+      if (!firstInvalid) firstInvalid = age;
+    } else if (isNaN(Number(ageRaw)) || Number(ageRaw) < 1 || Number(ageRaw) > 120) {
+      setError(age, ageError, '请输入 1–120 之间的数值');
+      if (!firstInvalid) firstInvalid = age;
     } else {
-      setError(weight, weightError, null);
+      setError(age, ageError, null);
     }
 
     return firstInvalid;
@@ -419,28 +525,46 @@
     }
 
     var gender = form.querySelector('input[name="gender"]:checked').value;
-    var w = Number(waist.value);
+    var hCm = Number(height.value);
     var kg = Number(weight.value);
+    var w = Number(waist.value);
+    var ageYears = Number(age.value);
 
-    var a = w * 0.74;
+    // 腰围估计法
     var constant = gender === 'female' ? 34.89 : 44.74;
-    var b = kg * 0.082 + constant;
-    var fatWeight = a - b;
-    var rate = Math.max(0, (fatWeight / kg) * 100);
+    var fatWeight = w * 0.74 - (kg * 0.082 + constant);
+    var rate1 = Math.max(0, (fatWeight / kg) * 100);
+
+    // BMI估计法（Deurenberg 公式）
+    var hM = hCm / 100;
+    var bmi = kg / (hM * hM);
+    var sex = gender === 'male' ? 1 : 0;
+    var rate2 = 1.2 * bmi + 0.23 * ageYears - 5.4 - 10.8 * sex;
+
+    // 取两公式平均值作为最终结果
+    var rate = Math.max(0, (rate1 + rate2) / 2);
 
     var r = classify(gender, rate);
 
     rateValue.textContent = rate.toFixed(1);
+    rate1Value.textContent = rate1.toFixed(1);
+    rate2Value.textContent = rate2.toFixed(1);
     rateBadge.textContent = r.label;
     resultPanel.className = 'result visible tone-' + r.tone;
   });
 
   // Clear the corresponding error as the user types
-  waist.addEventListener('input', function () {
-    if (waist.getAttribute('aria-invalid')) setError(waist, waistError, null);
+  height.addEventListener('input', function () {
+    if (height.getAttribute('aria-invalid')) setError(height, heightError, null);
   });
   weight.addEventListener('input', function () {
     if (weight.getAttribute('aria-invalid')) setError(weight, weightError, null);
+  });
+  waist.addEventListener('input', function () {
+    if (waist.getAttribute('aria-invalid')) setError(waist, waistError, null);
+  });
+  age.addEventListener('input', function () {
+    if (age.getAttribute('aria-invalid')) setError(age, ageError, null);
   });
 })();
 </script>
